@@ -23,7 +23,11 @@ func NewMySQL() *MySQL {
 func (r *MySQL) Update(id int, title, content, status string) error {
 	query := "UPDATE reports SET title = ?, content = ?, status = ? WHERE id = ?"
 	_, err := r.conn.ExecutePreparedQuery(query, title, content, status, id)
-	return err
+	if err != nil {
+		return fmt.Errorf("error actualizando el reporte: %w", err)
+	}
+	log.Printf("Reporte con ID %d actualizado a estado '%s'", id, status)
+	return nil
 }
 
 func (r *MySQL) GetAll() ([]entities.Report, error) {

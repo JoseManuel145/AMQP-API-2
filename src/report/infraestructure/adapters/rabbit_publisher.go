@@ -3,6 +3,7 @@ package adapters
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"rabbitConsumer/src/core"
 	"rabbitConsumer/src/report/domain/entities"
@@ -18,21 +19,30 @@ func NewRabbitMQPublishService() *RabbitMQPublishService {
 }
 
 func (s *RabbitMQPublishService) PublishReport(report *entities.Report) error {
+	// Verificar si la conexión RabbitMQ está activa
 	if core.RabbitChannel == nil {
-		log.Println("no se conecto a rabbit")
-		return nil
+		log.Println("Error: RabbitMQ no está conectado")
+		return errors.New("RabbitMQ no está conectado")
 	}
 
-	body, _ := json.Marshal(report)
+	// Serializar el reporte a formato JSON
+	body, err := json.Marshal(report)
+	if err != nil {
+		log.Println("Error al serializar el reporte:", err)
+		return err
+	}
+
+	// Configurar el contexto para el timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := core.RabbitChannel.PublishWithContext(
+	// Publicar el mensaje en la cola "reports"
+	err = core.RabbitChannel.PublishWithContext(
 		ctx,
-		"reports",
-		"process",
-		false,
-		false,
+		"reports", // Nombre del exchange
+		"process", // Nombre de la cola
+		false,     // Mandatory
+		false,     // Immediate
 		amqp091.Publishing{
 			ContentType: "application/json",
 			Body:        body,
@@ -40,10 +50,10 @@ func (s *RabbitMQPublishService) PublishReport(report *entities.Report) error {
 	)
 
 	if err != nil {
-		log.Println("error al enviar el reporte", err)
-	} else {
-		log.Println("se envio el reporte", string(body))
+		log.Println("Error al enviar el reporte a RabbitMQ:", err)
+		return err
 	}
 
-	return err
+	log.Println("Reporte enviado correctamente a la cola 'process'.")
+	return nil
 }

@@ -9,9 +9,9 @@ import (
 )
 
 type ProcessReport struct {
-	Repo           domain.IReport
-	Rabbit         *adapters.RabbitMQService
-	PublishService *adapters.RabbitMQPublishService
+	Repo           domain.IReport                   // Interfaz del repositorio de reportes
+	Rabbit         *adapters.RabbitMQService        // Servicio para interactuar con RabbitMQ
+	PublishService *adapters.RabbitMQPublishService // Servicio para publicar mensajes en RabbitMQ
 }
 
 func NewProcessReport(repo domain.IReport, rabbit *adapters.RabbitMQService, publishService *adapters.RabbitMQPublishService) *ProcessReport {
@@ -22,23 +22,25 @@ func NewProcessReport(repo domain.IReport, rabbit *adapters.RabbitMQService, pub
 	}
 }
 
+// StartProcessingReports: Método que procesa los reportes en intervalos.
 func (pr *ProcessReport) StartProcessingReports() {
 	for {
 		time.Sleep(5 * time.Second)
 
+		// Fetch reports pendientes desde RabbitMQ
 		reports, err := pr.Rabbit.FetchReports()
 		if err != nil {
 			log.Println("Error obteniendo reportes pendientes:", err)
 			continue
 		}
 
+		// Procesar cada reporte
 		for _, data := range reports {
-			// Convertir el mapa a una estructura Report
 			report := entities.Report{
 				ID:      int(data["id"].(float64)), // JSON lo devuelve como float64
 				Title:   data["title"].(string),
 				Content: data["content"].(string),
-				Status:  "processed",
+				Status:  "in process", // Cambiamos el estado a "processed"
 			}
 
 			log.Printf("Procesando reporte ID %d", report.ID)
@@ -50,7 +52,7 @@ func (pr *ProcessReport) StartProcessingReports() {
 				continue
 			}
 
-			// Enviar mensaje a la cola de RabbitMQ
+			// Publicar un mensaje a RabbitMQ sobre el estado actualizado
 			err = pr.PublishService.PublishReport(&report)
 			if err != nil {
 				log.Println("Error enviando mensaje a RabbitMQ:", err)
