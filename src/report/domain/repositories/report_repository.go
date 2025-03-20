@@ -1,4 +1,4 @@
-package domain
+package repositories
 
 import "rabbitConsumer/src/report/domain/entities"
 

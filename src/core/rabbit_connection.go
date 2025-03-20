@@ -9,38 +9,35 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 )
 
-var RabbitChannel *amqp091.Channel
+type Conn_RabbitMQ struct {
+	Conn    *amqp091.Connection
+	Channel *amqp091.Channel
+	Err     string
+}
 
-func InitRabbitMQ() error {
+var RabbitInstance *Conn_RabbitMQ
+
+func InitRabbitMQ() *Conn_RabbitMQ {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error cargando el archivo .env: %v", err)
+		log.Fatalf("Error al cargar el archivo .env: %v", err)
 	}
 
-	url := fmt.Sprintf("amqp://%s:%s@%s:%s/",
-		os.Getenv("RABBIT_USER"),
-		os.Getenv("RABBIT_PASSWORD"),
-		os.Getenv("RABBIT_HOST"),
-		os.Getenv("RABBIT_PORT"),
-	)
+	rabbitURL := os.Getenv("RABBITMQ_URL")
+	if rabbitURL == "" {
+		log.Fatal("RABBITMQ_URL no definido en el archivo .env")
+	}
 
-	log.Println("Conectando a ", url)
-
-	conn, err := amqp091.Dial(url)
+	conn, err := amqp091.Dial(rabbitURL)
 	if err != nil {
-		log.Fatalf("Error de conexion: %v", err)
-		return err
+		return &Conn_RabbitMQ{Conn: nil, Channel: nil, Err: fmt.Sprintf("Error conectando con RabbitMQ: %v", err)}
 	}
 
-	RabbitChannel, err = conn.Channel()
+	channel, err := conn.Channel()
 	if err != nil {
-		log.Fatalf("Error al pasar los archivos: %v", err)
-		return err
+		return &Conn_RabbitMQ{Conn: conn, Channel: nil, Err: fmt.Sprintf("Error creando el canal de RabbitMQ: %v", err)}
 	}
 
-	if RabbitChannel == nil {
-		log.Fatalf("no se pasaron los archivos")
-	}
-
-	return nil
+	RabbitInstance = &Conn_RabbitMQ{Conn: conn, Channel: channel, Err: ""}
+	return RabbitInstance
 }

@@ -1,7 +1,7 @@
 package infraestructure
 
 import (
-	"rabbitConsumer/src/report/application/usecases"
+	"rabbitConsumer/src/report/application"
 	"rabbitConsumer/src/report/infraestructure/controllers"
 	"time"
 
@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(router *gin.Engine, processReport *usecases.ProcessReport) {
+func RegisterRoutes(router *gin.Engine, processReport *application.ProcessReport) {
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET"},

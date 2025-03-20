@@ -1,34 +1,30 @@
 package infraestructure
 
 import (
-	"log"
 	"rabbitConsumer/src/core"
-	"rabbitConsumer/src/report/application/usecases"
-	_ "rabbitConsumer/src/report/domain"
+	"rabbitConsumer/src/report/application"
+	_ "rabbitConsumer/src/report/domain/repositories"
 	"rabbitConsumer/src/report/infraestructure/adapters"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Dependencies struct {
-	ProcessReportUseCase *usecases.ProcessReport
+	ProcessReportUseCase *application.ProcessReport
 }
 
-func NewDependencies(db *MySQL) (*Dependencies, error) {
-	err := core.InitRabbitMQ()
-	if err != nil {
-		log.Fatal("Error al inicializar RabbitMQ:", err)
-	}
+func NewDependencies(router *gin.Engine, db *MySQL, rabbitConn *core.Conn_RabbitMQ) error {
+	// Inicializar el servicio de RabbitMQ con la conexión correcta
+	rabbitService := adapters.NewRabbitMQAdapter(rabbitConn)
 
-	rabbitService := adapters.NewRabbitMQService()
-	rabbitPublishService := adapters.NewRabbitMQPublishService()
-	reportRepo := NewMySQL()
+	updateReport := application.NewUpdateReport(db)
 
 	// Crear el caso de uso de procesamiento de reportes
-	processReportUseCase := usecases.NewProcessReport(reportRepo, rabbitService, rabbitPublishService)
+	processReportUseCase := application.NewProcessReport(db, rabbitService, updateReport)
 
+	RegisterRoutes(router, processReportUseCase)
 	// Iniciar la escucha de reportes pendientes en un goroutine
 	go processReportUseCase.StartProcessingReports()
 
-	return &Dependencies{
-		ProcessReportUseCase: processReportUseCase,
-	}, nil
+	return nil
 }

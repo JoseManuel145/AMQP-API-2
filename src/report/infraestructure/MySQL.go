@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"rabbitConsumer/src/core"
-	_ "rabbitConsumer/src/report/domain"
 	"rabbitConsumer/src/report/domain/entities"
+	_ "rabbitConsumer/src/report/domain/repositories"
 )
 
 type MySQL struct {

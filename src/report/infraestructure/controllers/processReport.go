@@ -2,16 +2,16 @@ package controllers
 
 import (
 	"net/http"
-	"rabbitConsumer/src/report/domain"
+	"rabbitConsumer/src/report/domain/repositories"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ReportController struct {
-	repo domain.IReport
+	repo repositories.IReport
 }
 
-func NewReportController(repo domain.IReport) *ReportController {
+func NewReportController(repo repositories.IReport) *ReportController {
 	return &ReportController{repo: repo}
 }
 

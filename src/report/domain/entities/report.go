@@ -1,8 +1,8 @@
 package entities
 
 type Report struct {
-	ID      int    `json:"id"`
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Status  string `json:"status"`
+	ID      int    `json:"Id"`
+	Title   string `json:"Title"`
+	Content string `json:"Content"`
+	Status  string `json:"Status"`
 }
